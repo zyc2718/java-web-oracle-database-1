@@ -1,0 +1,86 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.sql.*;
+
+public class UserApp extends JFrame {
+    // 定义界面组件
+    private JTextField txtUser = new JTextField(20);
+    private JPasswordField txtPwd = new JPasswordField(20);
+    private JButton btnAdd = new JButton("添加用户到数据库");
+    private JTextArea txtLog = new JTextArea(10, 30);
+
+    public UserApp() {
+        // 1. 设置窗口基本属性
+        setTitle("学生系统后台连接测试程序");
+        setSize(400, 350);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new FlowLayout());
+
+        // 2. 布局界面
+        add(new JLabel("用户名:"));
+        add(txtUser);
+        add(new JLabel("密  码:"));
+        add(txtPwd);
+        add(btnAdd);
+        
+        // 日志显示区域（可视化后台连接过程）
+        txtLog.setEditable(false);
+        add(new JScrollPane(txtLog));
+
+        // 3. 编写按钮点击事件（核心后台连接逻辑）
+        btnAdd.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                connectAndInsert();
+            }
+        });
+
+        setLocationRelativeTo(null); // 窗口居中
+        setVisible(true);
+    }
+
+    private void connectAndInsert() {
+        String username = txtUser.getText();
+        String password = new String(txtPwd.getPassword());
+        
+        // 数据库配置
+        String url = "jdbc:mysql://localhost:3306/schooldb?serverTimezone=Asia/Shanghai";
+        String dbUser = "root";
+        String dbPwd = "196911Enter."; 
+
+        try {
+            txtLog.append("正在尝试连接数据库...\n");
+            
+            // 加载驱动
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            
+            // 建立连接
+            Connection conn = DriverManager.getConnection(url, dbUser, dbPwd);
+            txtLog.append("✅ 后台连接成功！\n");
+
+            // 执行插入操作
+            String sql = "INSERT INTO classes (username, password) VALUES (?, ?)";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, username);
+            ps.setString(2, password);
+            
+            int result = ps.executeUpdate();
+            if (result > 0) {
+                txtLog.append("🚀 数据已成功写入数据库表 [classes]\n");
+                JOptionPane.showMessageDialog(null, "数据添加成功！");
+            }
+
+            ps.close();
+            conn.close();
+            txtLog.append("连接已关闭。\n----------------------\n");
+
+        } catch (Exception ex) {
+            txtLog.append("❌ 错误: " + ex.getMessage() + "\n");
+        }
+    }
+
+    public static void main(String[] args) {
+        // 启动应用程序
+        new UserApp();
+    }
+}
